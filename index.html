@@ -452,10 +452,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;font
         <div class="setup-step"><div class="step-num">2</div><div class="step-text">Click <strong>Extensions → Apps Script</strong>. Delete existing code and paste the script below. Click <strong>Save</strong>, then <strong>Deploy → New deployment</strong>. Set type to <strong>Web app</strong>, execute as <strong>Me</strong>, access to <strong>Anyone</strong>. Copy the Web App URL.</div></div>
         <div class="setup-step"><div class="step-num">3</div><div class="step-text">Paste the Web App URL below and click Connect.</div></div>
       </div>
-      <div style="background:var(--surface2);border-radius:var(--radius);padding:14px;margin:14px 0;font-family:monospace;font-size:11px;color:#a78bfa;line-height:1.7;white-space:pre-wrap;word-break:break-all;">function doPost(e) {
+      <div style="background:var(--surface2);border-radius:var(--radius);padding:14px;margin:14px 0;font-family:monospace;font-size:11px;color:#a78bfa;line-height:1.7;white-space:pre-wrap;word-break:break-all;">function doGet(e) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('Sessions') || ss.insertSheet('Sessions');
-  var data = JSON.parse(e.postData.contents);
+  var data = JSON.parse(e.parameter.data);
   if (sheet.getLastRow() === 0) { sheet.appendRow(data.headers); }
   sheet.appendRow(data.row);
   return ContentService.createTextOutput(JSON.stringify({status:'ok'}))
@@ -872,7 +872,22 @@ function importConfig(event){const file=event.target.files[0];if(!file)return;co
 function updateSheetsStatus(state,msg){const dot=document.getElementById('status-dot');const text=document.getElementById('status-text');if(!dot||!text)return;dot.className='status-dot '+state;const labels={connected:'Connected â new sessions sync automatically',error:'Connection error â check the URL',syncing:'Syncing...',notconnected:'Not connected'};text.textContent=msg||labels[state]||state;}
 function connectSheets(){const url=document.getElementById('sheets-url').value.trim();if(!url){showToast('Paste the Web App URL first');return;}saveSheetsUrl(url);updateSheetsStatus('connected');showToast('Connected!','success');}
 function buildSheetRow(session){const allDrillIds=getAllDrillIds();const drillLabels=allDrillIds.map(id=>getDrillLabelAny(id));const drillVals=allDrillIds.map(id=>session.drills[id]||0);const headers=['Date','Athlete',...drillLabels,'Notes','Total'];const row=[session.date,session.kid,...drillVals,session.notes||'',session.total];return{headers,row};}
-async function pushSessionToSheets(session,url){updateSheetsStatus('syncing');try{const payload=buildSheetRow(session);const resp=await fetch(url,{method:'POST',body:JSON.stringify(payload),headers:{'Content-Type':'application/json'}});const data=await resp.json();if(data.status==='ok'){syncedIds.add(session.id);saveSyncedIds(syncedIds);const ts=new Date().toLocaleString();saveLastSync(ts);const el=document.getElementById('last-sync');if(el)el.textContent=`Last synced: ${ts}`;updateSheetsStatus('connected');return true;}}catch(err){updateSheetsStatus('error');}return false;}
+async function pushSessionToSheets(session,url){
+  updateSheetsStatus('syncing');
+  try{
+    const payload=buildSheetRow(session);
+    // Use no-cors to avoid CORS preflight block; append data as URL params via GET
+    const params=new URLSearchParams({data:JSON.stringify(payload)});
+    await fetch(url+'?'+params.toString(),{method:'GET',mode:'no-cors'});
+    // no-cors means we can't read the response, so assume success after 1s
+    await new Promise(r=>setTimeout(r,1000));
+    syncedIds.add(session.id);saveSyncedIds(syncedIds);
+    const ts=new Date().toLocaleString();saveLastSync(ts);
+    const el=document.getElementById('last-sync');if(el)el.textContent='Last synced: '+ts;
+    updateSheetsStatus('connected');return true;
+  }catch(err){updateSheetsStatus('error');}
+  return false;
+}
 async function syncAllToSheets(){const url=loadSheetsUrl();if(!url){showToast('Connect to Google Sheets first');return;}const unsynced=sessions.filter(s=>!syncedIds.has(s.id));if(!unsynced.length){showToast('All sessions already synced','success');return;}showToast(`Syncing ${unsynced.length} sessions...`,'info');updateSheetsStatus('syncing');let ok=0;for(const s of unsynced){const success=await pushSessionToSheets(s,url);if(success)ok++;await new Promise(r=>setTimeout(r,300));}showToast(`Synced ${ok} of ${unsynced.length} sessions`,'success');renderBackup();}
 function clearAllData(){if(!confirm('This will permanently delete ALL session data. Export a CSV backup first!\n\nAre you sure?'))return;sessions=[];saveSessions(sessions);syncedIds=new Set();saveSyncedIds(syncedIds);showToast('All session data cleared');renderBackup();}
 function resetConfig(){if(!confirm('Reset all drills and categories to defaults? Your session data is not affected.'))return;config=JSON.parse(JSON.stringify(DEFAULT_CONFIG));saveConfig(config);buildPanel('walker');buildPanel('ayla');showToast('Config reset to defaults');}
