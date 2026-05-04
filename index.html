@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Training Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f0f0f;--surface:#1a1a1a;--surface2:#242424;--surface3:#2e2e2e;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);--text:#f0f0ee;--muted:#888;--dim:#555;--walker:#e8a020;--walker-dim:rgba(232,160,32,0.12);--ayla:#4aad7c;--ayla-dim:rgba(74,173,124,0.12);--accent:#e8a020;--radius:10px;--radius-lg:16px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;font-size:15px;min-height:100vh;line-height:1.5;}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 1.25rem;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;}
+.wordmark{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:22px;letter-spacing:0.04em;text-transform:uppercase;color:var(--text);}
+.wordmark span{color:var(--accent);}
+.header-date{font-size:12px;color:var(--muted);font-family:'Barlow Condensed',sans-serif;letter-spacing:0.06em;text-transform:uppercase;}
+.nav{display:flex;background:var(--surface);border-bottom:1px solid var(--border);padding:0 0.75rem;overflow-x:auto;}
+.nav::-webkit-scrollbar{display:none;}
+.nav-btn{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);background:none;border:none;padding:14px 16px 12px;cursor:pointer;border-bottom:3px solid transparent;transition:color 0.15s,border-color 0.15s;white-space:nowrap;}
+.nav-btn:hover{color:var(--text);}
+.nav-btn.active-walker{color:var(--walker);border-bottom-color:var(--walker);}
+.nav-btn.active-ayla{color:var(--ayla);border-bottom-color:var(--ayla);}
+.nav-btn.active-history{color:var(--text);border-bottom-color:var(--text);}
+.nav-btn.active-milestones{color:#f472b6;border-bottom-color:#f472b6;}
+.nav-btn.active-backup{color:#38bdf8;border-bottom-color:#38bdf8;}
+.nav-btn.active-manage{color:var(--muted);border-bottom-color:var(--muted);}
+.panel{display:none;padding:1.25rem;max-width:760px;margin:0 auto;}
+.panel.active{display:block;}
+
+/* ATHLETE PANELS */
+.session-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;gap:12px;flex-wrap:wrap;}
+.kid-label{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;letter-spacing:0.03em;text-transform:uppercase;}
+.kid-label.walker{color:var(--walker);}
+.kid-label.ayla{color:var(--ayla);}
+.date-field{display:flex;align-items:center;gap:8px;}
+.date-field label{font-size:12px;color:var(--muted);font-family:'Barlow Condensed',sans-serif;letter-spacing:0.06em;text-transform:uppercase;}
+.date-field input[type=date]{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;padding:6px 10px;cursor:pointer;color-scheme:dark;}
+.category{margin-bottom:2rem;}
+.cat-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.cat-label{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.cat-line{flex:1;height:1px;background:var(--border);}
+.drill-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;}
+.drill-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;transition:border-color 0.15s;}
+.drill-card:hover{border-color:var(--border2);}
+.drill-card.walker-card:hover{border-color:rgba(232,160,32,0.3);}
+.drill-card.ayla-card:hover{border-color:rgba(74,173,124,0.3);}
+.drill-card-name{font-size:11px;font-family:'Barlow Condensed',sans-serif;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.drill-last{font-size:11px;color:var(--dim);margin-bottom:6px;min-height:14px;}
+.drill-last strong{color:var(--muted);}
+.drill-card-count-wrap{display:flex;align-items:baseline;gap:6px;margin-bottom:10px;}
+.drill-card-count{font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:800;line-height:1;color:var(--text);border:none;border-bottom:1px solid transparent;outline:none;background:transparent;width:72px;padding:0;transition:border-color 0.15s;-moz-appearance:textfield;}
+.drill-card-count:focus{border-bottom-color:var(--border2);}
+.drill-card-count::-webkit-outer-spin-button,.drill-card-count::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.drill-card-unit{font-size:11px;color:var(--dim);}
+.counter-btns{display:flex;gap:6px;align-items:center;}
+.cb{background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;cursor:pointer;transition:background 0.1s,border-color 0.1s,transform 0.08s;display:flex;align-items:center;justify-content:center;}
+.cb:active{transform:scale(0.92);}
+.cb:hover{background:var(--surface3);border-color:var(--border2);}
+.cb-dec{width:32px;height:32px;}
+.cb-inc{width:32px;height:32px;}
+.cb-ten{height:32px;padding:0 10px;font-size:12px;letter-spacing:0.04em;}
+.walker .cb-inc:hover{background:var(--walker-dim);border-color:rgba(232,160,32,0.3);color:var(--walker);}
+.ayla .cb-inc:hover{background:var(--ayla-dim);border-color:rgba(74,173,124,0.3);color:var(--ayla);}
+.notes-section{margin-bottom:1.5rem;}
+.notes-section label{font-size:12px;color:var(--muted);font-family:'Barlow Condensed',sans-serif;letter-spacing:0.08em;text-transform:uppercase;display:block;margin-bottom:8px;}
+.notes-section textarea{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:'Barlow',sans-serif;font-size:14px;padding:10px 12px;resize:vertical;min-height:70px;transition:border-color 0.15s;}
+.notes-section textarea:focus{outline:none;border-color:var(--border2);}
+.log-btn{width:100%;padding:14px;border-radius:var(--radius);border:none;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:opacity 0.15s,transform 0.1s;}
+.log-btn:active{transform:scale(0.98);}
+.log-btn:hover{opacity:0.88;}
+.log-btn.walker-btn{background:var(--walker);color:#0f0f0f;}
+.log-btn.ayla-btn{background:var(--ayla);color:#0f0f0f;}
+
+/* HISTORY */
+.history-filter{display:flex;gap:8px;margin-bottom:1.5rem;flex-wrap:wrap;}
+.filter-btn{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:6px 14px;border-radius:99px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all 0.15s;}
+.filter-btn:hover{color:var(--text);border-color:var(--text);}
+.filter-btn.active-all{background:var(--surface2);color:var(--text);border-color:var(--border2);}
+.filter-btn.active-walker{background:var(--walker-dim);color:var(--walker);border-color:rgba(232,160,32,0.3);}
+.filter-btn.active-ayla{background:var(--ayla-dim);color:var(--ayla);border-color:rgba(74,173,124,0.3);}
+.session-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:10px;transition:border-color 0.15s;}
+.session-card:hover{border-color:var(--border2);}
+.session-card.walker-session{border-left:3px solid var(--walker);}
+.session-card.ayla-session{border-left:3px solid var(--ayla);}
+.session-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.session-who{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;}
+.session-who.walker{color:var(--walker);}
+.session-who.ayla{color:var(--ayla);}
+.session-date-label{font-size:12px;color:var(--muted);}
+.session-total{font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--muted);font-weight:600;letter-spacing:0.04em;}
+.drill-pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px;}
+.drill-pill{font-size:12px;padding:3px 10px;border-radius:99px;background:var(--surface2);color:var(--muted);font-family:'Barlow Condensed',sans-serif;letter-spacing:0.04em;}
+.drill-pill strong{color:var(--text);font-weight:700;}
+.session-notes{font-size:13px;color:var(--muted);font-style:italic;padding-top:8px;border-top:1px solid var(--border);margin-top:8px;}
+.session-delete{background:none;border:none;color:var(--dim);cursor:pointer;font-size:18px;padding:0 4px;transition:color 0.15s;line-height:1;}
+.session-delete:hover{color:#e05555;}
+.chart-section{margin-top:2rem;}
+.chart-label{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;}
+.chart-wrap{position:relative;width:100%;height:220px;}
+
+/* HEATMAP */
+.heatmap-section{margin-top:2rem;}
+.heatmap-scroll{overflow-x:auto;padding-bottom:6px;}
+.heatmap-scroll::-webkit-scrollbar{height:4px;}
+.heatmap-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.heatmap-grid{display:flex;gap:3px;align-items:flex-start;}
+.heatmap-week{display:flex;flex-direction:column;gap:3px;}
+.heatmap-month-label{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--dim);height:14px;display:flex;align-items:center;}
+.heatmap-cell{width:12px;height:12px;border-radius:2px;background:var(--surface2);cursor:default;transition:transform 0.1s;}
+.heatmap-cell:hover{transform:scale(1.3);}
+.heatmap-cell.level-0{background:var(--surface2);}
+.heatmap-cell.level-1{background:#1a3a28;}
+.heatmap-cell.level-2{background:#1d6b44;}
+.heatmap-cell.level-3{background:#28a060;}
+.heatmap-cell.level-4{background:#4aad7c;}
+.heatmap-cell.walker-1{background:#3a2800;}
+.heatmap-cell.walker-2{background:#6b4a00;}
+.heatmap-cell.walker-3{background:#a07000;}
+.heatmap-cell.walker-4{background:#e8a020;}
+.heatmap-legend{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:11px;color:var(--muted);font-family:'Barlow Condensed',sans-serif;}
+.heatmap-legend-cell{width:11px;height:11px;border-radius:2px;}
+.streak-info{display:flex;gap:16px;margin-top:10px;flex-wrap:wrap;}
+.streak-stat{font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--muted);}
+.streak-stat strong{color:var(--text);font-weight:700;}
+
+/* DRILL BREAKDOWN */
+.drill-chart-controls{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;align-items:center;}
+.drill-chart-controls select{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:'Barlow Condensed',sans-serif;font-size:13px;padding:6px 10px;cursor:pointer;}
+.drill-legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;}
+.drill-legend-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);font-family:'Barlow Condensed',sans-serif;letter-spacing:0.04em;}
+.drill-legend-swatch{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+
+/* TRENDS (now inside History) */
+.trends-controls{display:flex;gap:10px;margin-bottom:1.5rem;flex-wrap:wrap;align-items:center;}
+.trends-controls select{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:0.04em;padding:7px 12px;cursor:pointer;}
+.period-btns{display:flex;gap:4px;}
+.period-btn{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:6px 12px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all 0.15s;}
+.period-btn:hover{color:var(--text);}
+.period-btn.active{background:#a78bfa22;color:#a78bfa;border-color:#a78bfa55;}
+.drill-selector{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:8px;margin-bottom:1.5rem;}
+.drill-sel-btn{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:9px 12px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;transition:all 0.15s;text-align:left;}
+.drill-sel-btn:hover{border-color:var(--border2);color:var(--text);}
+.drill-sel-btn.selected{border-color:#a78bfa55;background:#a78bfa18;color:#a78bfa;}
+.drill-sel-btn .cat-tag{display:block;font-size:10px;color:var(--dim);font-weight:600;letter-spacing:0.08em;margin-top:3px;}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:1.5rem;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;}
+.stat-card-label{font-size:11px;font-family:'Barlow Condensed',sans-serif;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.stat-card-value{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;line-height:1;color:var(--text);}
+.stat-card-sub{font-size:11px;color:var(--dim);margin-top:3px;}
+.stat-card.highlight{border-color:#a78bfa44;}
+.stat-card.highlight .stat-card-value{color:#a78bfa;}
+.trend-chart-wrap{position:relative;width:100%;height:260px;margin-bottom:2rem;}
+.trend-empty{text-align:center;padding:3rem;color:var(--muted);font-size:14px;}
+.rollup-section{margin-top:2rem;}
+.rollup-tabs{display:flex;gap:4px;margin-bottom:1rem;}
+.rollup-tab{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all 0.15s;}
+.rollup-tab:hover{color:var(--text);}
+.rollup-tab.active{background:var(--surface2);color:var(--text);border-color:var(--border2);}
+.rollup-table{width:100%;border-collapse:collapse;font-size:13px;}
+.rollup-table th{text-align:left;color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;font-size:11px;padding:8px 10px;border-bottom:1px solid var(--border2);}
+.rollup-table td{padding:9px 10px;border-bottom:1px solid var(--border);color:var(--text);}
+.rollup-table tr:last-child td{border-bottom:none;}
+.rollup-table .num{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;}
+.pb-badge{font-size:10px;padding:2px 6px;border-radius:99px;background:#a78bfa22;color:#a78bfa;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:0.04em;margin-left:6px;}
+
+/* HISTORY SECTION TABS */
+.hsection-tabs{display:flex;gap:4px;margin-bottom:1.5rem;border-bottom:1px solid var(--border);padding-bottom:0;}
+.hsection-tab{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:10px 16px 12px;border:none;background:none;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s;}
+.hsection-tab:hover{color:var(--text);}
+.hsection-tab.active{color:var(--text);border-bottom-color:var(--text);}
+.hsection{display:none;}
+.hsection.active{display:block;}
+
+/* MILESTONES */
+.milestone-add-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;margin-bottom:1.5rem;}
+.milestone-add-title{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;}
+.milestone-form{display:grid;gap:10px;}
+.milestone-row{display:flex;gap:8px;flex-wrap:wrap;}
+.m-input{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;padding:8px 12px;flex:1;min-width:140px;}
+.m-input:focus{outline:none;border-color:#f472b6;}
+.m-select{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;padding:8px 12px;cursor:pointer;}
+.m-btn{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:8px 18px;border-radius:var(--radius);border:none;background:#f472b6;color:#0f0f0f;cursor:pointer;transition:opacity 0.15s;white-space:nowrap;}
+.m-btn:hover{opacity:0.85;}
+.m-emoji-row{display:flex;gap:6px;flex-wrap:wrap;}
+.m-emoji-btn{width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all 0.1s;}
+.m-emoji-btn:hover{border-color:var(--border2);transform:scale(1.1);}
+.m-emoji-btn.selected{border-color:#f472b6;background:#f472b622;}
+
+/* TIMELINE */
+.timeline{position:relative;padding-left:28px;}
+.timeline::before{content:'';position:absolute;left:7px;top:6px;bottom:6px;width:1px;background:var(--border2);}
+.timeline-year-group{margin-bottom:2rem;}
+.timeline-year{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);margin-bottom:10px;margin-left:-28px;padding-left:0;}
+.milestone-item{position:relative;margin-bottom:14px;}
+.milestone-dot{position:absolute;left:-25px;top:10px;width:10px;height:10px;border-radius:50%;border:2px solid var(--bg);flex-shrink:0;}
+.milestone-dot.walker{background:var(--walker);}
+.milestone-dot.ayla{background:var(--ayla);}
+.milestone-dot.both{background:#f472b6;}
+.milestone-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:13px 14px;transition:border-color 0.15s;}
+.milestone-card:hover{border-color:var(--border2);}
+.milestone-card.walker-m{border-left:3px solid var(--walker);}
+.milestone-card.ayla-m{border-left:3px solid var(--ayla);}
+.milestone-card.both-m{border-left:3px solid #f472b6;}
+.milestone-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+.milestone-emoji{font-size:20px;line-height:1;margin-right:8px;flex-shrink:0;}
+.milestone-title{font-weight:600;font-size:14px;color:var(--text);flex:1;}
+.milestone-meta{display:flex;align-items:center;gap:8px;margin-top:4px;}
+.milestone-date{font-size:12px;color:var(--muted);}
+.milestone-who{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:2px 8px;border-radius:99px;}
+.milestone-who.walker{color:var(--walker);background:var(--walker-dim);}
+.milestone-who.ayla{color:var(--ayla);background:var(--ayla-dim);}
+.milestone-who.both{color:#f472b6;background:#f472b622;}
+.milestone-note{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.5;}
+.milestone-delete{background:none;border:none;color:var(--dim);cursor:pointer;font-size:16px;padding:0 2px;transition:color 0.15s;line-height:1;flex-shrink:0;}
+.milestone-delete:hover{color:#e05555;}
+.milestone-empty{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:14px;}
+
+/* BACKUP */
+.backup-section{margin-bottom:2.5rem;}
+.backup-section-title{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;text-transform:uppercase;letter-spacing:0.04em;color:var(--text);margin-bottom:4px;}
+.backup-section-sub{font-size:13px;color:var(--muted);margin-bottom:1.25rem;line-height:1.6;}
+.backup-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:12px;}
+.backup-card-title{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px;}
+.backup-card-title.csv{color:#38bdf8;}
+.backup-card-title.sheets{color:#4aad7c;}
+.backup-card-desc{font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6;}
+.action-btn{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:10px 20px;border-radius:var(--radius);border:none;cursor:pointer;transition:opacity 0.15s,transform 0.1s;display:inline-block;}
+.action-btn:active{transform:scale(0.97);}
+.action-btn:hover{opacity:0.85;}
+.action-btn.csv-btn{background:#38bdf8;color:#0f0f0f;}
+.action-btn.sheets-btn{background:#4aad7c;color:#0f0f0f;}
+.action-btn.import-btn{background:var(--surface3);color:var(--text);border:1px solid var(--border2);}
+.action-btn.danger-btn{background:transparent;color:#e05555;border:1px solid #e0555544;font-size:12px;padding:7px 14px;}
+.action-btn.danger-btn:hover{background:#e0555522;}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.setup-steps{margin-top:14px;}
+.setup-step{display:flex;gap:12px;margin-bottom:12px;align-items:flex-start;}
+.step-num{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:14px;color:#4aad7c;min-width:20px;padding-top:1px;}
+.step-text{font-size:13px;color:var(--muted);line-height:1.6;}
+.step-text code{background:var(--surface2);padding:1px 6px;border-radius:4px;font-family:monospace;font-size:12px;color:var(--text);}
+.step-text a{color:#38bdf8;text-decoration:none;}
+.step-text a:hover{text-decoration:underline;}
+.sheets-input-wrap{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.sheets-input{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;padding:8px 12px;flex:1;min-width:220px;}
+.sheets-input:focus{outline:none;border-color:#4aad7c;}
+.sheets-status{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--muted);}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--dim);flex-shrink:0;}
+.status-dot.connected{background:#4aad7c;}
+.status-dot.error{background:#e05555;}
+.status-dot.syncing{background:#e8a020;animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+.last-sync{font-size:11px;color:var(--dim);margin-top:4px;}
+.divider{height:1px;background:var(--border);margin:2rem 0;}
+.stats-summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-bottom:1.5rem;}
+.mini-stat{background:var(--surface2);border-radius:var(--radius);padding:12px;}
+.mini-stat-label{font-size:10px;font-family:'Barlow Condensed',sans-serif;letter-spacing:0.08em;text-transform:uppercase;color:var(--dim);margin-bottom:4px;}
+.mini-stat-value{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--text);}
+
+/* MANAGE */
+.manage-section{margin-bottom:2rem;}
+.manage-header{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px;}
+.manage-header.walker{color:var(--walker);}
+.manage-header.ayla{color:var(--ayla);}
+.manage-sub{font-size:12px;color:var(--muted);margin-bottom:14px;}
+.cat-manage{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:10px;overflow:hidden;}
+.cat-manage-header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border);}
+.cat-manage-name{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text);}
+.drill-manage-row{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--border);}
+.drill-manage-name{font-size:14px;}
+.drill-manage-unit{font-size:12px;color:var(--muted);}
+.icon-btn{background:none;border:none;cursor:pointer;color:var(--dim);font-size:16px;padding:4px 6px;border-radius:6px;transition:all 0.15s;line-height:1;}
+.icon-btn:hover{background:var(--surface2);color:var(--text);}
+.icon-btn.danger:hover{color:#e05555;}
+.add-form{padding:12px 14px;background:var(--surface2);display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.add-form input,.add-form select{background:var(--surface);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;padding:7px 10px;}
+.add-form input{flex:1;min-width:120px;}
+.add-form select{min-width:80px;}
+.add-form input:focus,.add-form select:focus{outline:none;border-color:var(--accent);}
+.add-cat-form{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.add-cat-form input{background:var(--surface);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;padding:7px 10px;flex:1;min-width:160px;}
+.add-cat-form input:focus{outline:none;border-color:var(--accent);}
+.btn-add{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:7px 14px;border-radius:8px;border:1px solid var(--border2);background:var(--surface3);color:var(--text);cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+.btn-add:hover{background:var(--accent);color:#0f0f0f;border-color:var(--accent);}
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:14px;}
+.empty-icon{font-size:48px;display:block;margin-bottom:12px;opacity:0.4;}
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(100px);background:var(--surface3);border:1px solid var(--border2);border-radius:var(--radius);padding:10px 20px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text);z-index:999;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);pointer-events:none;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast.success{color:var(--ayla);border-color:rgba(74,173,124,0.4);}
+.toast.info{color:#38bdf8;border-color:rgba(56,189,248,0.4);}
+@media(max-width:480px){.drill-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));}.stats-row{grid-template-columns:repeat(2,1fr);}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="wordmark">Training<span>.</span></div>
+  <div class="header-date" id="header-date"></div>
+</div>
+<div class="nav">
+  <button class="nav-btn active-walker" onclick="switchTab('walker')">Walker</button>
+  <button class="nav-btn" onclick="switchTab('ayla')">Ayla</button>
+  <button class="nav-btn" onclick="switchTab('history')">History</button>
+  <button class="nav-btn" onclick="switchTab('milestones')">Milestones</button>
+  <button class="nav-btn" onclick="switchTab('backup')">Backup &amp; Sync</button>
+  <button class="nav-btn" onclick="switchTab('manage')">Manage</button>
+</div>
+
+<div id="panel-walker" class="panel active"></div>
+<div id="panel-ayla" class="panel"></div>
+
+<!-- HISTORY: frequency + drill breakdown + per-drill trends + session log -->
+<div id="panel-history" class="panel">
+  <div class="hsection-tabs">
+    <button class="hsection-tab active" onclick="switchHSection('freq',this)">Frequency</button>
+    <button class="hsection-tab" onclick="switchHSection('drills',this)">Drill breakdown</button>
+    <button class="hsection-tab" onclick="switchHSection('trends',this)">Drill trends</button>
+    <button class="hsection-tab" onclick="switchHSection('log',this)">Session log</button>
+  </div>
+
+  <!-- FREQUENCY / HEATMAP -->
+  <div class="hsection active" id="hsec-freq">
+    <div class="history-filter">
+      <button class="filter-btn active-all" onclick="setFilter('all',this)">All</button>
+      <button class="filter-btn" onclick="setFilter('walker',this)">Walker</button>
+      <button class="filter-btn" onclick="setFilter('ayla',this)">Ayla</button>
+    </div>
+    <div class="chart-label">Training frequency — past 52 weeks</div>
+    <div class="heatmap-scroll"><div class="heatmap-grid" id="heatmap-grid"></div></div>
+    <div class="heatmap-legend" id="heatmap-legend"></div>
+    <div class="streak-info" id="streak-info"></div>
+  </div>
+
+  <!-- DRILL BREAKDOWN -->
+  <div class="hsection" id="hsec-drills">
+    <div class="drill-chart-controls">
+      <select id="drill-chart-kid" onchange="renderDrillChart()">
+        <option value="walker">Walker</option>
+        <option value="ayla">Ayla</option>
+      </select>
+      <select id="drill-chart-window" onchange="renderDrillChart()">
+        <option value="20">Last 20 sessions</option>
+        <option value="10">Last 10 sessions</option>
+        <option value="50">Last 50 sessions</option>
+      </select>
+    </div>
+    <div class="drill-legend" id="drill-legend"></div>
+    <div class="chart-wrap" style="height:280px;"><canvas id="drill-chart" role="img" aria-label="Per-drill volume breakdown">Drill breakdown chart</canvas></div>
+  </div>
+
+  <!-- DRILL TRENDS -->
+  <div class="hsection" id="hsec-trends">
+    <div class="trends-controls">
+      <select id="trends-kid" onchange="renderTrends()">
+        <option value="walker">Walker</option>
+        <option value="ayla">Ayla</option>
+      </select>
+      <div class="period-btns">
+        <button class="period-btn active" onclick="setPeriod('week',this)">7 days</button>
+        <button class="period-btn" onclick="setPeriod('month',this)">30 days</button>
+        <button class="period-btn" onclick="setPeriod('year',this)">1 year</button>
+        <button class="period-btn" onclick="setPeriod('all',this)">All time</button>
+      </div>
+    </div>
+    <div class="chart-label" style="margin-bottom:10px;">Select a drill</div>
+    <div class="drill-selector" id="drill-selector"></div>
+    <div id="drill-stats"></div>
+    <div class="trend-chart-wrap"><canvas id="trend-chart" role="img" aria-label="Drill volume over time">Drill trend</canvas></div>
+    <div class="rollup-section">
+      <div class="chart-label">Volume rollup</div>
+      <div class="rollup-tabs">
+        <button class="rollup-tab active" onclick="setRollup('week',this)">By week</button>
+        <button class="rollup-tab" onclick="setRollup('month',this)">By month</button>
+        <button class="rollup-tab" onclick="setRollup('year',this)">By year</button>
+      </div>
+      <div id="rollup-table-wrap"></div>
+    </div>
+  </div>
+
+  <!-- SESSION LOG -->
+  <div class="hsection" id="hsec-log">
+    <div class="history-filter">
+      <button class="filter-btn active-all" onclick="setFilter('all',this)">All</button>
+      <button class="filter-btn" onclick="setFilter('walker',this)">Walker</button>
+      <button class="filter-btn" onclick="setFilter('ayla',this)">Ayla</button>
+    </div>
+    <div id="history-list"></div>
+  </div>
+</div>
+
+<!-- MILESTONES -->
+<div id="panel-milestones" class="panel">
+  <div class="milestone-add-card">
+    <div class="milestone-add-title">Add a milestone</div>
+    <div class="milestone-form">
+      <div class="milestone-row">
+        <input type="text" class="m-input" id="m-title" placeholder="e.g. First tournament win, First pull-up..." style="flex:2;">
+        <select class="m-select" id="m-who">
+          <option value="walker">Walker</option>
+          <option value="ayla">Ayla</option>
+          <option value="both">Both</option>
+        </select>
+        <input type="date" class="m-input" id="m-date" style="min-width:140px;flex:none;">
+      </div>
+      <input type="text" class="m-input" id="m-note" placeholder="Details, context, how it felt... (optional)">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div class="m-emoji-row" id="emoji-row"></div>
+        <button class="m-btn" onclick="addMilestone()">Add milestone</button>
+      </div>
+    </div>
+  </div>
+  <div class="chart-label" style="margin-bottom:1rem;">Timeline</div>
+  <div id="milestone-timeline"></div>
+</div>
+
+<!-- BACKUP & SYNC -->
+<div id="panel-backup" class="panel">
+  <div class="backup-section">
+    <div class="backup-section-title" style="color:#38bdf8;">Your data</div>
+    <div class="backup-section-sub">Everything stored locally in this browser right now.</div>
+    <div class="stats-summary" id="data-summary"></div>
+  </div>
+  <div class="divider"></div>
+  <div class="backup-section">
+    <div class="backup-section-title">CSV Export</div>
+    <div class="backup-section-sub">Downloads all sessions as a spreadsheet file. Works in Excel, Google Sheets, or Numbers. Safe forever — no software needed to read it.</div>
+    <div class="backup-card">
+      <div class="backup-card-title csv">Export sessions</div>
+      <div class="backup-card-desc">One row per session. Columns: Date, Athlete, each drill logged, Notes, Total reps. Re-import any time to restore your data.</div>
+      <div class="btn-row">
+        <button class="action-btn csv-btn" onclick="exportCSV()">Download CSV</button>
+        <label class="action-btn import-btn" style="cursor:pointer;">Import CSV <input type="file" accept=".csv" style="display:none" onchange="importCSV(event)"></label>
+      </div>
+    </div>
+    <div class="backup-card">
+      <div class="backup-card-title csv">Export drill config</div>
+      <div class="backup-card-desc">Saves your custom drills and categories as a JSON file. Restore on any device or browser in one click.</div>
+      <div class="btn-row">
+        <button class="action-btn csv-btn" onclick="exportConfig()">Download config</button>
+        <label class="action-btn import-btn" style="cursor:pointer;">Import config <input type="file" accept=".json" style="display:none" onchange="importConfig(event)"></label>
+      </div>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <div class="backup-section">
+    <div class="backup-section-title">Google Sheets Sync</div>
+    <div class="backup-section-sub">Every session you log gets appended to a Google Sheet automatically. Your data lives in your Google account — viewable, shareable, and permanent regardless of what happens to this app.</div>
+    <div class="backup-card">
+      <div class="backup-card-title sheets">One-time setup</div>
+      <div class="backup-card-desc">Takes about 5 minutes. You'll create a free Google Apps Script that acts as a bridge between this app and your Sheet.</div>
+      <div class="setup-steps">
+        <div class="setup-step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://sheets.google.com" target="_blank">sheets.google.com</a> and create a new spreadsheet. Name it <strong>Training Tracker</strong>.</div></div>
+        <div class="setup-step"><div class="step-num">2</div><div class="step-text">Click <strong>Extensions → Apps Script</strong>. Delete existing code and paste the script below. Click <strong>Save</strong>, then <strong>Deploy → New deployment</strong>. Set type to <strong>Web app</strong>, execute as <strong>Me</strong>, access to <strong>Anyone</strong>. Copy the Web App URL.</div></div>
+        <div class="setup-step"><div class="step-num">3</div><div class="step-text">Paste the Web App URL below and click Connect.</div></div>
+      </div>
+      <div style="background:var(--surface2);border-radius:var(--radius);padding:14px;margin:14px 0;font-family:monospace;font-size:11px;color:#a78bfa;line-height:1.7;white-space:pre-wrap;word-break:break-all;">function doPost(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Sessions') || ss.insertSheet('Sessions');
+  var data = JSON.parse(e.postData.contents);
+  if (sheet.getLastRow() === 0) { sheet.appendRow(data.headers); }
+  sheet.appendRow(data.row);
+  return ContentService.createTextOutput(JSON.stringify({status:'ok'}))
+    .setMimeType(ContentService.MimeType.JSON);
+}</div>
+      <div class="sheets-input-wrap">
+        <input type="text" class="sheets-input" id="sheets-url" placeholder="Paste your Web App URL here...">
+        <button class="action-btn sheets-btn" onclick="connectSheets()">Connect</button>
+      </div>
+      <div class="sheets-status" id="sheets-status">
+        <div class="status-dot" id="status-dot"></div>
+        <span id="status-text">Not connected</span>
+      </div>
+      <div class="last-sync" id="last-sync"></div>
+    </div>
+    <div class="backup-card">
+      <div class="backup-card-title sheets">Sync all existing sessions</div>
+      <div class="backup-card-desc">After connecting, push all locally stored sessions to the Sheet at once. New sessions sync automatically on log.</div>
+      <div class="btn-row"><button class="action-btn sheets-btn" onclick="syncAllToSheets()">Push all to Sheets</button></div>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <div class="backup-section">
+    <div class="backup-section-title" style="color:#e05555;">Danger zone</div>
+    <div class="backup-section-sub">These actions are permanent. Export a CSV backup first.</div>
+    <div class="btn-row">
+      <button class="action-btn danger-btn" onclick="clearAllData()">Clear all session data</button>
+      <button class="action-btn danger-btn" onclick="resetConfig()">Reset drill config to defaults</button>
+    </div>
+  </div>
+</div>
+
+<div id="panel-manage" class="panel"></div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const DEFAULT_CONFIG={walker:{categories:[{id:'baseball',label:'Baseball',drills:[{id:'d1',label:'Swings',unit:'reps'},{id:'d2',label:'Grounders',unit:'reps'},{id:'d3',label:'Pop-ups',unit:'reps'},{id:'d4',label:'Long toss',unit:'reps'},{id:'d5',label:'Tee work',unit:'reps'}]},{id:'strength',label:'Strength',drills:[{id:'d6',label:'Push-ups',unit:'reps'},{id:'d7',label:'Squats',unit:'reps'},{id:'d8',label:'Pull-ups',unit:'reps'}]}]},ayla:{categories:[{id:'golf',label:'Golf',drills:[{id:'d9',label:'Full swings',unit:'reps'},{id:'d10',label:'Putts',unit:'reps'},{id:'d11',label:'Chip shots',unit:'reps'},{id:'d12',label:'Drives',unit:'reps'}]},{id:'strength',label:'Strength',drills:[{id:'d13',label:'Push-ups',unit:'reps'},{id:'d14',label:'Squats',unit:'reps'},{id:'d15',label:'Planks',unit:'sec'}]}]}};
+function loadConfig(){try{return JSON.parse(localStorage.getItem('tt_config'))||DEFAULT_CONFIG;}catch{return DEFAULT_CONFIG;}}
+function saveConfig(c){localStorage.setItem('tt_config',JSON.stringify(c));}
+function loadSessions(){try{return JSON.parse(localStorage.getItem('tt_sessions'))||[];}catch{return[];}}
+function saveSessions(s){localStorage.setItem('tt_sessions',JSON.stringify(s));}
+function loadMilestones(){try{return JSON.parse(localStorage.getItem('tt_milestones'))||[];}catch{return[];}}
+function saveMilestones(m){localStorage.setItem('tt_milestones',JSON.stringify(m));}
+function loadSheetsUrl(){return localStorage.getItem('tt_sheets_url')||'';}
+function saveSheetsUrl(u){localStorage.setItem('tt_sheets_url',u);}
+function loadLastSync(){return localStorage.getItem('tt_last_sync')||'';}
+function saveLastSync(t){localStorage.setItem('tt_last_sync',t);}
+function loadSyncedIds(){try{return new Set(JSON.parse(localStorage.getItem('tt_synced_ids'))||[]);}catch{return new Set();}}
+function saveSyncedIds(s){localStorage.setItem('tt_synced_ids',JSON.stringify([...s]));}
+
+let config=loadConfig(),sessions=loadSessions(),milestones=loadMilestones(),counts={walker:{},ayla:{}};
+let historyFilter='all',drillChart=null,trendChart=null,activeTab='walker';
+let trendPeriod='all',trendRollup='week',selectedDrillId=null,selectedEmoji='🏆';
+let syncedIds=loadSyncedIds(),activeHSection='freq';
+const EMOJIS=['🏆','⭐','🎯','💪','⚾','⛳','🥇','🎖️','🔥','📈','🏅','🌟'];
+const DRILL_COLORS=['#e8a020','#4aad7c','#a78bfa','#38bdf8','#f472b6','#fb923c','#a3e635','#e879f9','#2dd4bf','#facc15','#60a5fa','#f87171'];
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function today(){return new Date().toISOString().slice(0,10);}
+function genId(){return 'd'+Date.now()+Math.random().toString(36).slice(2,5);}
+function genCatId(){return 'c'+Date.now()+Math.random().toString(36).slice(2,5);}
+function formatDate(d){const[y,m,day]=d.split('-');const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return`${mo[+m-1]} ${+day} ${y}`;}
+function formatDateShort(d){const[y,m,day]=d.split('-');const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return`${mo[+m-1]} ${+day}`;}
+function getWeekKey(d){const dt=new Date(d+'T00:00:00');const day=dt.getDay();const diff=dt.getDate()-day+(day===0?-6:1);const mon=new Date(dt.setDate(diff));return mon.toISOString().slice(0,10);}
+function getMonthKey(d){return d.slice(0,7);}
+function getYearKey(d){return d.slice(0,4);}
+function showToast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(type?' '+type:'');setTimeout(()=>{t.className='toast';},2500);}
+function setHeaderDate(){const d=new Date();const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];document.getElementById('header-date').textContent=`${days[d.getDay()]} ${mo[d.getMonth()]} ${d.getDate()}`;}
+setHeaderDate();
+
+// get last session value for a drill
+function getLastVal(kid,drillId){
+  const prev=[...sessions].filter(s=>s.kid===kid&&s.drills[drillId]!=null).sort((a,b)=>b.date.localeCompare(a.date));
+  return prev.length?prev[0].drills[drillId]:null;
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function switchTab(tab){
+  activeTab=tab;
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+tab).classList.add('active');
+  const tabs=['walker','ayla','history','milestones','backup','manage'];
+  document.querySelectorAll('.nav-btn').forEach((b,i)=>{b.className='nav-btn';if(tabs[i]===tab)b.classList.add('active-'+tab);});
+  if(tab==='history')renderHistorySection();
+  if(tab==='milestones')renderMilestones();
+  if(tab==='backup')renderBackup();
+  if(tab==='manage')renderManage();
+}
+
+function switchHSection(sec,btn){
+  activeHSection=sec;
+  document.querySelectorAll('.hsection-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.hsection').forEach(s=>s.classList.remove('active'));
+  document.getElementById('hsec-'+sec).classList.add('active');
+  if(sec==='freq')renderHeatmap();
+  if(sec==='drills')renderDrillChart();
+  if(sec==='trends')renderTrends();
+  if(sec==='log')renderSessionLog();
+}
+
+function renderHistorySection(){
+  if(activeHSection==='freq')renderHeatmap();
+  else if(activeHSection==='drills')renderDrillChart();
+  else if(activeHSection==='trends')renderTrends();
+  else if(activeHSection==='log')renderSessionLog();
+}
+
+// ── ATHLETE PANELS ────────────────────────────────────────────────────────────
+function buildPanel(kid){
+  const panel=document.getElementById('panel-'+kid);
+  let html=`<div class="session-bar"><div class="kid-label ${kid}">${kid.charAt(0).toUpperCase()+kid.slice(1)}</div><div class="date-field"><label>Date</label><input type="date" id="${kid}-date" value="${today()}"></div></div>`;
+  config[kid].categories.forEach(cat=>{
+    html+=`<div class="category ${kid}"><div class="cat-header"><div class="cat-label">${cat.label}</div><div class="cat-line"></div></div><div class="drill-grid">`;
+    cat.drills.forEach(drill=>{
+      if(!counts[kid][drill.id])counts[kid][drill.id]=0;
+      const last=getLastVal(kid,drill.id);
+      const lastHtml=last!=null?`Last: <strong>${last}</strong> ${drill.unit}`:'First time';
+      html+=`<div class="drill-card ${kid}-card">
+        <div class="drill-card-name">${drill.label}</div>
+        <div class="drill-last" id="last-${kid}-${drill.id}">${lastHtml}</div>
+        <div class="drill-card-count-wrap">
+          <input type="number" class="drill-card-count"
+            id="cnt-${kid}-${drill.id}"
+            inputmode="numeric"
+            min="0"
+            value="0"
+            onInput="handleInput('${kid}','${drill.id}',this)"
+            onKeyDown="handleKey(event,'${kid}','${drill.id}')"
+            onFocus="this.select()"
+          >
+          <div class="drill-card-unit">${drill.unit}</div>
+        </div>
+        <div class="counter-btns">
+          <button class="cb cb-dec" onclick="adj('${kid}','${drill.id}',-1)">−</button>
+          <button class="cb cb-inc" onclick="adj('${kid}','${drill.id}',1)">+</button>
+          <button class="cb cb-ten" onclick="adj('${kid}','${drill.id}',10)">+10</button>
+        </div>
+      </div>`;
+    });
+    html+=`</div></div>`;
+  });
+  html+=`<div class="notes-section"><label>Notes</label><textarea id="${kid}-notes" placeholder="How'd the session go?"></textarea></div><button class="log-btn ${kid}-btn" onclick="logSession('${kid}')">Log Session</button>`;
+  panel.innerHTML=html;
+}
+
+
+function handleInput(kid,drillId,el){
+  const val=Math.max(0,parseInt(el.value)||0);
+  counts[kid][drillId]=val;
+}
+
+function handleKey(e,kid,drillId){
+  if(e.key==='Enter'){e.preventDefault();e.target.blur();}
+  if(e.key==='ArrowUp'){e.preventDefault();e.preventDefault();adj(kid,drillId,1);}
+  if(e.key==='ArrowDown'){e.preventDefault();adj(kid,drillId,-1);}
+}
+
+function adj(kid,drillId,delta){
+  counts[kid][drillId]=Math.max(0,(counts[kid][drillId]||0)+delta);
+  const el=document.getElementById(`cnt-${kid}-${drillId}`);
+  if(el)el.value=counts[kid][drillId];
+}
+
+async function logSession(kid){
+  const date=document.getElementById(`${kid}-date`).value||today();
+  const notes=document.getElementById(`${kid}-notes`).value.trim();
+  const snapshot={};let total=0;
+  config[kid].categories.forEach(cat=>{cat.drills.forEach(d=>{const v=counts[kid][d.id]||0;if(v>0){snapshot[d.id]=v;total+=v;}});});
+  if(total===0){showToast('Add some reps first!');return;}
+  const session={id:genId(),kid,date,drills:snapshot,notes,total};
+  sessions.push(session);saveSessions(sessions);
+  // Reset
+  config[kid].categories.forEach(cat=>{cat.drills.forEach(d=>{counts[kid][d.id]=0;const el=document.getElementById(`cnt-${kid}-${d.id}`);if(el)el.innerText='0';});});
+  document.getElementById(`${kid}-notes`).value='';
+  // Refresh last-session hints
+  buildPanel(kid);
+  showToast('Session logged!','success');
+  const url=loadSheetsUrl();if(url)await pushSessionToSheets(session,url);
+}
+
+// ── HISTORY SECTIONS ──────────────────────────────────────────────────────────
+function setFilter(f,btn){
+  historyFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.className='filter-btn');
+  btn.className=`filter-btn active-${f}`;
+  if(activeHSection==='freq')renderHeatmap();
+  if(activeHSection==='log')renderSessionLog();
+}
+
+function getDrillLabel(kid,drillId){for(const cat of(config[kid]?.categories||[])){for(const d of cat.drills){if(d.id===drillId)return d.label;}}return drillId;}
+function getDrillUnit(kid,drillId){for(const cat of(config[kid]?.categories||[])){for(const d of cat.drills){if(d.id===drillId)return d.unit;}}return '';}
+function getDrillLabelAny(id){for(const k of['walker','ayla']){const l=getDrillLabel(k,id);if(l!==id)return l;}return id;}
+function getAllDrills(kid){const drills=[];(config[kid]?.categories||[]).forEach(cat=>{cat.drills.forEach(d=>drills.push({...d,catLabel:cat.label}));});return drills;}
+
+function renderHeatmap(){
+  const kid=historyFilter==='all'?null:historyFilter;
+  const isWalker=kid==='walker';
+  const dateMap={};
+  sessions.forEach(s=>{if(kid&&s.kid!==kid)return;dateMap[s.date]=(dateMap[s.date]||0)+1;});
+  const now=new Date();const todayStr=now.toISOString().slice(0,10);
+  const start=new Date(now);start.setDate(start.getDate()-364);
+  while(start.getDay()!==1)start.setDate(start.getDate()-1);
+  const months=[];const weeks=[];let cur=new Date(start);let lastMonth=-1;
+  while(cur<=now){
+    const weekDays=[];
+    for(let d=0;d<7;d++){
+      const ds=cur.toISOString().slice(0,10);
+      const count=dateMap[ds]||0;const isFuture=ds>todayStr;
+      let level=0;if(!isFuture&&count>0){level=count>=4?4:count>=3?3:count>=2?2:1;}
+      weekDays.push({date:ds,count,level,isFuture});cur.setDate(cur.getDate()+1);
+    }
+    const wStart=new Date(weekDays[0].date+'T00:00:00');
+    if(wStart.getMonth()!==lastMonth){months.push({weekIdx:weeks.length,label:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][wStart.getMonth()]});lastMonth=wStart.getMonth();}
+    weeks.push(weekDays);
+  }
+  const prefix=isWalker?'walker':'';
+  let html='';
+  weeks.forEach((week,wi)=>{
+    const ml=months.find(m=>m.weekIdx===wi);
+    html+=`<div class="heatmap-week"><div class="heatmap-month-label">${ml?ml.label:''}</div>`;
+    week.forEach(cell=>{
+      const cls=cell.isFuture?'level-0':(cell.level===0?'level-0':`${prefix?prefix+'-':''}level-${cell.level}`);
+      html+=`<div class="heatmap-cell ${cls}" title="${cell.count>0?`${cell.date}: ${cell.count} session${cell.count>1?'s':''}`:cell.date}"></div>`;
+    });
+    html+=`</div>`;
+  });
+  document.getElementById('heatmap-grid').innerHTML=html;
+  const lc=isWalker?['#3a2800','#6b4a00','#a07000','#e8a020']:['#1a3a28','#1d6b44','#28a060','#4aad7c'];
+  document.getElementById('heatmap-legend').innerHTML=`<span>Less</span>${lc.map(c=>`<div class="heatmap-legend-cell" style="background:${c}"></div>`).join('')}<span>More</span>`;
+  const allDates=[...new Set(sessions.filter(s=>!kid||s.kid===kid).map(s=>s.date))].sort();
+  let curStreak=0,maxStreak=0,streak=0;
+  const todayD=new Date(todayStr+'T00:00:00');
+  for(let i=allDates.length-1;i>=0;i--){
+    const d=new Date(allDates[i]+'T00:00:00');
+    if(i===allDates.length-1){streak=Math.round((todayD-d)/(86400000))<=1?1:0;}
+    else{const prev=new Date(allDates[i+1]+'T00:00:00');streak=Math.round((prev-d)/86400000)===1?streak+1:1;}
+    if(i===allDates.length-1)curStreak=streak;
+    maxStreak=Math.max(maxStreak,streak);
+  }
+  document.getElementById('streak-info').innerHTML=`<div class="streak-stat">Current streak <strong>${curStreak} day${curStreak!==1?'s':''}</strong></div><div class="streak-stat">Longest streak <strong>${maxStreak} day${maxStreak!==1?'s':''}</strong></div><div class="streak-stat">Total training days <strong>${allDates.length}</strong></div>`;
+}
+
+function renderDrillChart(){
+  const kid=document.getElementById('drill-chart-kid')?.value||'walker';
+  const win=parseInt(document.getElementById('drill-chart-window')?.value||20);
+  const kidSessions=[...sessions].filter(s=>s.kid===kid).sort((a,b)=>a.date.localeCompare(b.date)).slice(-win);
+  if(!kidSessions.length){if(drillChart){drillChart.destroy();drillChart=null;}document.getElementById('drill-legend').innerHTML='';return;}
+  const drillIdSet=new Set();kidSessions.forEach(s=>Object.keys(s.drills).forEach(id=>drillIdSet.add(id)));
+  const drillIds=[...drillIdSet];
+  const labels=kidSessions.map(s=>formatDateShort(s.date));
+  const datasets=drillIds.map((id,i)=>({label:getDrillLabel(kid,id),data:kidSessions.map(s=>s.drills[id]||0),backgroundColor:DRILL_COLORS[i%DRILL_COLORS.length],borderRadius:3,borderSkipped:false}));
+  document.getElementById('drill-legend').innerHTML=drillIds.map((id,i)=>`<div class="drill-legend-item"><div class="drill-legend-swatch" style="background:${DRILL_COLORS[i%DRILL_COLORS.length]}"></div>${getDrillLabel(kid,id)}</div>`).join('');
+  if(drillChart)drillChart.destroy();
+  drillChart=new Chart(document.getElementById('drill-chart'),{type:'bar',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y}`}}},scales:{x:{stacked:true,grid:{display:false},ticks:{color:'#666',font:{size:11,family:'Barlow Condensed'},autoSkip:true,maxTicksLimit:12,maxRotation:45}},y:{stacked:true,beginAtZero:true,grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#666',font:{size:11,family:'Barlow Condensed'}}}}}});
+}
+
+function renderSessionLog(){
+  const list=document.getElementById('history-list');
+  const filtered=[...sessions].filter(s=>historyFilter==='all'||s.kid===historyFilter).sort((a,b)=>b.date.localeCompare(a.date));
+  if(!filtered.length){list.innerHTML='<div class="empty-state"><span class="empty-icon">📋</span>No sessions yet.</div>';}
+  else{list.innerHTML=filtered.map(s=>{const pills=Object.entries(s.drills).map(([did,val])=>`<span class="drill-pill"><strong>${val}</strong> ${getDrillLabel(s.kid,did)}</span>`).join('');return`<div class="session-card ${s.kid}-session"><div class="session-top"><div><span class="session-who ${s.kid}">${s.kid.charAt(0).toUpperCase()+s.kid.slice(1)}</span><span class="session-date-label" style="margin-left:10px;">${formatDate(s.date)}</span></div><div style="display:flex;align-items:center;gap:8px;"><span class="session-total">${s.total} total</span><button class="session-delete" onclick="deleteSession('${s.id}')">✕</button></div></div><div class="drill-pills">${pills}</div>${s.notes?`<div class="session-notes">${s.notes}</div>`:''}</div>`;}).join('');}
+}
+
+function deleteSession(id){if(!confirm('Delete this session?'))return;sessions=sessions.filter(s=>s.id!==id);saveSessions(sessions);syncedIds.delete(id);saveSyncedIds(syncedIds);renderSessionLog();}
+
+// ── DRILL TRENDS ──────────────────────────────────────────────────────────────
+function filterByPeriod(data){if(trendPeriod==='all')return data;const now=new Date();const cutoff=new Date(now);if(trendPeriod==='week')cutoff.setDate(now.getDate()-7);else if(trendPeriod==='month')cutoff.setDate(now.getDate()-30);else if(trendPeriod==='year')cutoff.setFullYear(now.getFullYear()-1);const cutoffStr=cutoff.toISOString().slice(0,10);return data.filter(s=>s.date>=cutoffStr);}
+function setPeriod(p,btn){trendPeriod=p;document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderTrends();}
+function setRollup(r,btn){trendRollup=r;document.querySelectorAll('.rollup-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderRollupTable();}
+function renderTrends(){
+  const kid=document.getElementById('trends-kid').value;
+  const allDrills=getAllDrills(kid);
+  if(!selectedDrillId||!allDrills.find(d=>d.id===selectedDrillId))selectedDrillId=allDrills[0]?.id||null;
+  document.getElementById('drill-selector').innerHTML=allDrills.map(d=>`<button class="drill-sel-btn ${d.id===selectedDrillId?'selected':''}" onclick="selectDrill('${d.id}',this)">${d.label}<span class="cat-tag">${d.catLabel}</span></button>`).join('');
+  renderDrillStats(kid);renderRollupTable();
+}
+function selectDrill(id,btn){selectedDrillId=id;const kid=document.getElementById('trends-kid').value;document.querySelectorAll('.drill-sel-btn').forEach(b=>b.classList.remove('selected'));if(btn)btn.classList.add('selected');renderDrillStats(kid);renderRollupTable();}
+function getDrillData(kid,drillId){return filterByPeriod(sessions.filter(s=>s.kid===kid&&s.drills[drillId]!==undefined)).sort((a,b)=>a.date.localeCompare(b.date));}
+function renderDrillStats(kid){
+  const statsDiv=document.getElementById('drill-stats');
+  if(!selectedDrillId){statsDiv.innerHTML='';return;}
+  const drill=getAllDrills(kid).find(d=>d.id===selectedDrillId);
+  if(!drill){statsDiv.innerHTML='';return;}
+  const data=getDrillData(kid,selectedDrillId);
+  const allD=sessions.filter(s=>s.kid===kid&&s.drills[selectedDrillId]!==undefined).sort((a,b)=>a.date.localeCompare(b.date));
+  if(!data.length){statsDiv.innerHTML=`<div class="trend-empty">No data for "${drill.label}" in this period.</div>`;if(trendChart){trendChart.destroy();trendChart=null;}return;}
+  const vals=data.map(s=>s.drills[selectedDrillId]);
+  const allVals=allD.map(s=>s.drills[selectedDrillId]);
+  const total=vals.reduce((a,b)=>a+b,0);const avg=Math.round(total/vals.length);const best=Math.max(...allVals);
+  const recent=vals[vals.length-1];const prev=vals.length>1?vals[vals.length-2]:null;
+  const trend=prev!==null?(recent>prev?'↑':recent<prev?'↓':'—'):'—';
+  const trendColor=prev!==null?(recent>prev?'#4aad7c':recent<prev?'#e05555':'#888'):'#888';
+  statsDiv.innerHTML=`<div class="stats-row"><div class="stat-card highlight"><div class="stat-card-label">Personal best</div><div class="stat-card-value">${best}</div><div class="stat-card-sub">${drill.unit} / session</div></div><div class="stat-card"><div class="stat-card-label">Last session</div><div class="stat-card-value">${recent} <span style="font-size:20px;color:${trendColor}">${trend}</span></div><div class="stat-card-sub">${drill.unit}</div></div><div class="stat-card"><div class="stat-card-label">Avg / session</div><div class="stat-card-value">${avg}</div><div class="stat-card-sub">${drill.unit}</div></div><div class="stat-card"><div class="stat-card-label">Sessions</div><div class="stat-card-value">${data.length}</div><div class="stat-card-sub">in period</div></div></div>`;
+  renderTrendChart(kid,drill,data);
+}
+function renderTrendChart(kid,drill,data){
+  const labels=data.map(s=>formatDateShort(s.date));const vals=data.map(s=>s.drills[selectedDrillId]);
+  const kc=kid==='walker'?'#e8a020':'#4aad7c';const kcd=kid==='walker'?'rgba(232,160,32,0.15)':'rgba(74,173,124,0.15)';
+  if(trendChart)trendChart.destroy();
+  trendChart=new Chart(document.getElementById('trend-chart'),{type:'line',data:{labels,datasets:[{label:drill.label,data:vals,borderColor:kc,backgroundColor:kcd,fill:true,tension:0.3,pointBackgroundColor:kc,pointRadius:4,pointHoverRadius:6,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.y} ${drill.unit}`}}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#666',font:{size:11,family:'Barlow Condensed'}}},x:{grid:{display:false},ticks:{color:'#666',font:{size:11,family:'Barlow Condensed'},autoSkip:true,maxTicksLimit:10,maxRotation:45}}}}});
+}
+function renderRollupTable(){
+  const kid=document.getElementById('trends-kid').value;
+  const wrap=document.getElementById('rollup-table-wrap');
+  if(!selectedDrillId){wrap.innerHTML='';return;}
+  const drill=getAllDrills(kid).find(d=>d.id===selectedDrillId);
+  if(!drill){wrap.innerHTML='';return;}
+  const allData=sessions.filter(s=>s.kid===kid&&s.drills[selectedDrillId]!==undefined).sort((a,b)=>a.date.localeCompare(b.date));
+  if(!allData.length){wrap.innerHTML=`<div style="color:var(--muted);font-size:13px;padding:1rem 0;">No data yet.</div>`;return;}
+  const grouped={};
+  allData.forEach(s=>{let key;if(trendRollup==='week')key=getWeekKey(s.date);else if(trendRollup==='month')key=getMonthKey(s.date);else key=getYearKey(s.date);if(!grouped[key])grouped[key]=[];grouped[key].push(s.drills[selectedDrillId]);});
+  const keys=Object.keys(grouped).sort();const totals=keys.map(k=>grouped[k].reduce((a,b)=>a+b,0));const maxTotal=Math.max(...totals);
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function fk(k){if(trendRollup==='week')return`Week of ${formatDateShort(k)}`;if(trendRollup==='month'){const[y,m]=k.split('-');return`${months[+m-1]} ${y}`;}return k;}
+  const rows=keys.map((k,i)=>{const t=totals[i];const sc=grouped[k].length;const avg=Math.round(t/sc);const isPB=t===maxTotal;return`<tr><td>${fk(k)}</td><td class="num">${t}${isPB?` <span class="pb-badge">PB</span>`:''}</td><td class="num">${avg}</td><td style="color:var(--muted)">${sc}</td></tr>`;}).reverse().join('');
+  wrap.innerHTML=`<table class="rollup-table"><thead><tr><th>${trendRollup.charAt(0).toUpperCase()+trendRollup.slice(1)}</th><th>Total ${drill.unit}</th><th>Avg/session</th><th>Sessions</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+// ── MILESTONES ────────────────────────────────────────────────────────────────
+function initEmojiPicker(){
+  document.getElementById('emoji-row').innerHTML=EMOJIS.map(e=>`<button class="m-emoji-btn ${e===selectedEmoji?'selected':''}" onclick="pickEmoji('${e}',this)">${e}</button>`).join('');
+}
+function pickEmoji(e,btn){selectedEmoji=e;document.querySelectorAll('.m-emoji-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');}
+
+function addMilestone(){
+  const title=document.getElementById('m-title').value.trim();
+  const who=document.getElementById('m-who').value;
+  const date=document.getElementById('m-date').value||today();
+  const note=document.getElementById('m-note').value.trim();
+  if(!title){showToast('Add a title first');return;}
+  milestones.push({id:genId(),title,who,date,note,emoji:selectedEmoji});
+  saveMilestones(milestones);
+  document.getElementById('m-title').value='';document.getElementById('m-note').value='';
+  showToast('Milestone added!','success');
+  renderMilestones();
+}
+
+function deleteMilestone(id){if(!confirm('Delete this milestone?'))return;milestones=milestones.filter(m=>m.id!==id);saveMilestones(milestones);renderMilestones();}
+
+function renderMilestones(){
+  initEmojiPicker();
+  document.getElementById('m-date').value=today();
+  const tl=document.getElementById('milestone-timeline');
+  if(!milestones.length){tl.innerHTML='<div class="milestone-empty">No milestones yet. Add the first one — first tournament, first pull-up, anything worth remembering.</div>';return;}
+  const sorted=[...milestones].sort((a,b)=>b.date.localeCompare(a.date));
+  const byYear={};sorted.forEach(m=>{const y=m.date.slice(0,4);if(!byYear[y])byYear[y]=[];byYear[y].push(m);});
+  let html='<div class="timeline">';
+  Object.keys(byYear).sort().reverse().forEach(year=>{
+    html+=`<div class="timeline-year-group"><div class="timeline-year">${year}</div>`;
+    byYear[year].forEach(m=>{
+      html+=`<div class="milestone-item">
+        <div class="milestone-dot ${m.who}"></div>
+        <div class="milestone-card ${m.who}-m">
+          <div class="milestone-top">
+            <div style="display:flex;align-items:center;gap:6px;flex:1;">
+              <span class="milestone-emoji">${m.emoji}</span>
+              <span class="milestone-title">${m.title}</span>
+            </div>
+            <button class="milestone-delete" onclick="deleteMilestone('${m.id}')">✕</button>
+          </div>
+          <div class="milestone-meta">
+            <span class="milestone-date">${formatDate(m.date)}</span>
+            <span class="milestone-who ${m.who}">${m.who==='both'?'Both twins':m.who.charAt(0).toUpperCase()+m.who.slice(1)}</span>
+          </div>
+          ${m.note?`<div class="milestone-note">${m.note}</div>`:''}
+        </div>
+      </div>`;
+    });
+    html+='</div>';
+  });
+  html+='</div>';
+  tl.innerHTML=html;
+}
+
+// ── BACKUP & SYNC ─────────────────────────────────────────────────────────────
+function renderBackup(){
+  const ws=sessions.filter(s=>s.kid==='walker').length;const as=sessions.filter(s=>s.kid==='ayla').length;
+  const totalReps=sessions.reduce((a,s)=>a+s.total,0);const firstDate=sessions.length?sessions.map(s=>s.date).sort()[0]:'—';
+  document.getElementById('data-summary').innerHTML=`<div class="mini-stat"><div class="mini-stat-label">Total sessions</div><div class="mini-stat-value">${sessions.length}</div></div><div class="mini-stat"><div class="mini-stat-label">Walker</div><div class="mini-stat-value">${ws}</div></div><div class="mini-stat"><div class="mini-stat-label">Ayla</div><div class="mini-stat-value">${as}</div></div><div class="mini-stat"><div class="mini-stat-label">Total reps</div><div class="mini-stat-value">${totalReps.toLocaleString()}</div></div><div class="mini-stat"><div class="mini-stat-label">Since</div><div class="mini-stat-value" style="font-size:13px;">${firstDate!=='—'?formatDateShort(firstDate):'—'}</div></div><div class="mini-stat"><div class="mini-stat-label">Milestones</div><div class="mini-stat-value">${milestones.length}</div></div>`;
+  const url=loadSheetsUrl();if(url){document.getElementById('sheets-url').value=url;updateSheetsStatus('connected');}
+  const ls=loadLastSync();if(ls)document.getElementById('last-sync').textContent=`Last synced: ${ls}`;
+}
+function getAllDrillIds(){const ids=new Set();sessions.forEach(s=>Object.keys(s.drills).forEach(id=>ids.add(id)));return[...ids];}
+function exportCSV(){
+  if(!sessions.length){showToast('No sessions to export');return;}
+
+  const rows=sessions.map(s=>{const dc=drillIds.map(id=>s.drills[id]||0);const note=(s.notes||'').replace(/"/g,'\\"');return[s.date,s.kid,...dc,`"${note}"`,s.total];});
+  const csv=[headers,...rows].map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`training-tracker-${today()}.csv`;a.click();showToast('CSV downloaded','info');
+}
+function importCSV(event){
+  const file=event.target.files[0];if(!file)return;
+  const reader=new FileReader();reader.onload=e=>{
+    const lines=e.target.result.trim().split('\n');if(lines.length<2){showToast('Empty or invalid CSV');return;}
+    const headers=lines[0].split(',');const dateIdx=headers.indexOf('Date');const kidIdx=headers.indexOf('Athlete');const notesIdx=headers.indexOf('Notes');const totalIdx=headers.indexOf('Total');
+    if(dateIdx<0||kidIdx<0){showToast('Invalid CSV format');return;}
+    const drillHeaders=headers.slice(kidIdx+1,notesIdx<0?headers.length:notesIdx);
+    let imported=0;
+    lines.slice(1).forEach(line=>{
+      const cols=line.split(',');const date=cols[dateIdx]?.trim();const kid=cols[kidIdx]?.trim();if(!date||!kid)return;
+      const drills={};drillHeaders.forEach((label,i)=>{const val=parseInt(cols[kidIdx+1+i])||0;if(val>0){for(const k of['walker','ayla']){for(const cat of(config[k]?.categories||[])){for(const d of cat.drills){if(d.label===label.trim())drills[d.id]=val;}}}}});
+      const total=Object.values(drills).reduce((a,b)=>a+b,0)||parseInt(cols[totalIdx])||0;
+      const notes=(cols[notesIdx]||'').replace(/^"|"$/g,'').replace(/""/g,'"');
+      if(!sessions.find(s=>s.date===date&&s.kid===kid&&s.total===total)){sessions.push({id:genId(),kid,date,drills,notes,total});imported++;}
+    });
+    saveSessions(sessions);showToast(`Imported ${imported} sessions`,'success');renderBackup();
+  };reader.readAsText(file);event.target.value='';
+}
+function exportConfig(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(config,null,2)],{type:'application/json'}));a.download=`training-config-${today()}.json`;a.click();showToast('Config downloaded','info');}
+function importConfig(event){const file=event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=e=>{try{const c=JSON.parse(e.target.result);if(!c.walker||!c.ayla)throw new Error('Invalid');config=c;saveConfig(config);buildPanel('walker');buildPanel('ayla');showToast('Config restored','success');}catch{showToast('Invalid config file');}};reader.readAsText(file);event.target.value='';}
+function updateSheetsStatus(state,msg){const dot=document.getElementById('status-dot');const text=document.getElementById('status-text');if(!dot||!text)return;dot.className='status-dot '+state;const labels={connected:'Connected â new sessions sync automatically',error:'Connection error â check the URL',syncing:'Syncing...',notconnected:'Not connected'};text.textContent=msg||labels[state]||state;}
+function connectSheets(){const url=document.getElementById('sheets-url').value.trim();if(!url){showToast('Paste the Web App URL first');return;}saveSheetsUrl(url);updateSheetsStatus('connected');showToast('Connected!','success');}
+function buildSheetRow(session){const allDrillIds=getAllDrillIds();const drillLabels=allDrillIds.map(id=>getDrillLabelAny(id));const drillVals=allDrillIds.map(id=>session.drills[id]||0);const headers=['Date','Athlete',...drillLabels,'Notes','Total'];const row=[session.date,session.kid,...drillVals,session.notes||'',session.total];return{headers,row};}
+async function pushSessionToSheets(session,url){updateSheetsStatus('syncing');try{const payload=buildSheetRow(session);const resp=await fetch(url,{method:'POST',body:JSON.stringify(payload),headers:{'Content-Type':'application/json'}});const data=await resp.json();if(data.status==='ok'){syncedIds.add(session.id);saveSyncedIds(syncedIds);const ts=new Date().toLocaleString();saveLastSync(ts);const el=document.getElementById('last-sync');if(el)el.textContent=`Last synced: ${ts}`;updateSheetsStatus('connected');return true;}}catch(err){updateSheetsStatus('error');}return false;}
+async function syncAllToSheets(){const url=loadSheetsUrl();if(!url){showToast('Connect to Google Sheets first');return;}const unsynced=sessions.filter(s=>!syncedIds.has(s.id));if(!unsynced.length){showToast('All sessions already synced','success');return;}showToast(`Syncing ${unsynced.length} sessions...`,'info');updateSheetsStatus('syncing');let ok=0;for(const s of unsynced){const success=await pushSessionToSheets(s,url);if(success)ok++;await new Promise(r=>setTimeout(r,300));}showToast(`Synced ${ok} of ${unsynced.length} sessions`,'success');renderBackup();}
+function clearAllData(){if(!confirm('This will permanently delete ALL session data. Export a CSV backup first!\n\nAre you sure?'))return;sessions=[];saveSessions(sessions);syncedIds=new Set();saveSyncedIds(syncedIds);showToast('All session data cleared');renderBackup();}
+function resetConfig(){if(!confirm('Reset all drills and categories to defaults? Your session data is not affected.'))return;config=JSON.parse(JSON.stringify(DEFAULT_CONFIG));saveConfig(config);buildPanel('walker');buildPanel('ayla');showToast('Config reset to defaults');}
+function renderManage(){const panel=document.getElementById('panel-manage');let html='';['walker','ayla'].forEach(kid=>{const label=kid.charAt(0).toUpperCase()+kid.slice(1);html+=`<div class="manage-section"><div class="manage-header ${kid}">${label}</div><div class="manage-sub">Add, rename, or remove categories and drills</div>`;config[kid].categories.forEach(cat=>{html+=`<div class="cat-manage"><div class="cat-manage-header"><span class="cat-manage-name">${cat.label}</span><button class="icon-btn danger" onclick="deleteCat('${kid}','${cat.id}')">&#x2715;</button></div>`;cat.drills.forEach(drill=>{html+=`<div class="drill-manage-row"><div><div class="drill-manage-name">${drill.label}</div><div class="drill-manage-unit">${drill.unit}</div></div><button class="icon-btn danger" onclick="deleteDrill('${kid}','${cat.id}','${drill.id}')">&#x2715;</button></div>`;});html+=`<div class="add-form"><input type="text" id="new-drill-${kid}-${cat.id}" placeholder="Drill name..."/><select id="new-unit-${kid}-${cat.id}"><option value="reps">reps</option><option value="sec">sec</option><option value="min">min</option><option value="sets">sets</option></select><button class="btn-add" onclick="addDrill('${kid}','${cat.id}')">+ Drill</button></div></div>`;});html+=`<div class="add-cat-form"><input type="text" id="new-cat-${kid}" placeholder="New category name..."/><button class="btn-add" onclick="addCategory('${kid}')">+ Category</button></div></div>`;});panel.innerHTML=html;}
+function addDrill(kid,catId){const nameEl=document.getElementById(`new-drill-${kid}-${catId}`);const unitEl=document.getElementById(`new-unit-${kid}-${catId}`);const name=nameEl.value.trim();if(!name){showToast('Enter a drill name');return;}const cat=config[kid].categories.find(c=>c.id===catId);if(!cat)return;cat.drills.push({id:genId(),label:name,unit:unitEl.value});saveConfig(config);buildPanel(kid);renderManage();showToast(`Added "${name}"`,'success');}
+function deleteDrill(kid,catId,drillId){const cat=config[kid].categories.find(c=>c.id===catId);if(!cat)return;cat.drills=cat.drills.filter(d=>d.id!==drillId);saveConfig(config);buildPanel(kid);renderManage();showToast('Drill removed');}
+function addCategory(kid){const el=document.getElementById(`new-cat-${kid}`);const name=el.value.trim();if(!name){showToast('Enter a category name');return;}config[kid].categories.push({id:genCatId(),label:name,drills:[]});saveConfig(config);buildPanel(kid);renderManage();showToast(`Added "${name}"`,'success');}
+function deleteCat(kid,catId){config[kid].categories=config[kid].categories.filter(c=>c.id!==catId);saveConfig(config);buildPanel(kid);renderManage();showToast('Category removed');}
+buildPanel('walker');
+buildPanel('ayla');
+</script>
+</body>
+</html>
